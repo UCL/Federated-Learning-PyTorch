@@ -15,7 +15,7 @@ from tensorboardX import SummaryWriter
 
 from options import args_parser
 from update import LocalUpdate, test_inference
-from models import MLP, CNNMnist, CNNFashion_Mnist, CNNCifar
+from models import MLP, CNNMnist, CNNFashion_Mnist, CNNCifar, UNet
 from utils import get_dataset, average_weights, exp_details
 
 
@@ -29,9 +29,10 @@ if __name__ == '__main__':
     args = args_parser()
     exp_details(args)
 
-    if args.gpu_id:
-        torch.cuda.set_device(args.gpu_id)
-    device = 'cuda' if args.gpu else 'cpu'
+    if args.gpu is not None:
+        torch.cuda.set_device(args.gpu)
+    device = 'cuda' if args.gpu is not None else 'cpu'
+    print(f"device = {device}")
 
     # load dataset and user groups
     train_dataset, test_dataset, user_groups = get_dataset(args)
@@ -45,7 +46,6 @@ if __name__ == '__main__':
             global_model = CNNFashion_Mnist(args=args)
         elif args.dataset == 'cifar':
             global_model = CNNCifar(args=args)
-
     elif args.model == 'mlp':
         # Multi-layer preceptron
         img_size = train_dataset[0][0].shape
@@ -54,13 +54,16 @@ if __name__ == '__main__':
             len_in *= x
             global_model = MLP(dim_in=len_in, dim_hidden=64,
                                dim_out=args.num_classes)
+    elif args.model == 'unet':
+        # Unet
+        global_model = UNet(args=args)
     else:
         exit('Error: unrecognized model')
 
     # Set the model to train and send it to device.
     global_model.to(device)
     global_model.train()
-    print(global_model)
+    # print(global_model)
 
     # copy weights
     global_weights = global_model.state_dict()
