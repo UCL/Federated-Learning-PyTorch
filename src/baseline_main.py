@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # Python version: 3.6
-
+import sys
 
 from tqdm import tqdm
 import matplotlib.pyplot as plt
@@ -12,15 +12,16 @@ from torch.utils.data import DataLoader
 from utils import get_dataset
 from options import args_parser
 from update import test_inference
-from models import MLP, CNNMnist, CNNFashion_Mnist, CNNCifar
+from models import MLP, CNNMnist, CNNFashion_Mnist, CNNCifar, UNet
 
 
 if __name__ == '__main__':
     args = args_parser()
-    if args.gpu:
+    # args.gpu = 'cuda:0'  # 待删除
+    if args.gpu is not None:
         torch.cuda.set_device(args.gpu)
-    device = 'cuda' if args.gpu else 'cpu'
-
+    device = 'cuda' if args.gpu is not None else 'cpu'
+    print(f"device = {device}")
     # load datasets
     train_dataset, test_dataset, _ = get_dataset(args)
 
@@ -41,13 +42,16 @@ if __name__ == '__main__':
             len_in *= x
             global_model = MLP(dim_in=len_in, dim_hidden=64,
                                dim_out=args.num_classes)
+    elif args.model == 'unet':
+        # Unet
+        global_model = UNet(args=args)
     else:
         exit('Error: unrecognized model')
 
     # Set the model to train and send it to device.
     global_model.to(device)
     global_model.train()
-    print(global_model)
+    # print(global_model)
 
     # Training
     # Set optimizer and criterion
@@ -58,26 +62,44 @@ if __name__ == '__main__':
         optimizer = torch.optim.Adam(global_model.parameters(), lr=args.lr,
                                      weight_decay=1e-4)
 
-    trainloader = DataLoader(train_dataset, batch_size=64, shuffle=True)
-    criterion = torch.nn.NLLLoss().to(device)
+    trainloader = DataLoader(train_dataset, batch_size=args.trainloder_BatchSize, shuffle=True)
+    if args.criterion == 'CE':
+        criterion = torch.nn.CrossEntropyLoss()
+    elif args.criterion == 'NLLLoss':
+        criterion = torch.nn.NLLLoss().to(device)
     epoch_loss = []
 
-    for epoch in tqdm(range(args.epochs)):
-        batch_loss = []
+    if args.debug:
+        args.epochs = 1
 
-        for batch_idx, (images, labels) in enumerate(trainloader):
+
+    for epoch in range(args.epochs):
+        # print('Train Epoch: {:2}/{:2} '.format(epoch+1, args.epochs ))
+        batch_loss = []
+        pbar = tqdm(enumerate(trainloader), total=len(trainloader), file=sys.stdout, unit="batch")
+        for batch_idx, (images, labels) in pbar:
             images, labels = images.to(device), labels.to(device)
 
             optimizer.zero_grad()
             outputs = global_model(images)
-            loss = criterion(outputs, labels)
+            if args.criterion == 'CE':
+                loss = criterion(outputs.float(), labels.long())
+            elif args.criterion == 'NLLLoss':
+                loss = criterion(outputs, labels)
+
             loss.backward()
             optimizer.step()
 
-            if batch_idx % 50 == 0:
-                print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
-                    epoch+1, batch_idx * len(images), len(trainloader.dataset),
-                    100. * batch_idx / len(trainloader), loss.item()))
+            # if batch_idx % 50 == 0:
+            s = 'Train Epoch: {:2}/{:2}  Batch: [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
+                epoch+1,
+                args.epochs,
+                batch_idx * len(images),
+                len(trainloader.dataset),
+                100. * batch_idx * len(images) / len(trainloader.dataset),
+                loss.item())
+            pbar.set_description(s)
+
             batch_loss.append(loss.item())
 
         loss_avg = sum(batch_loss)/len(batch_loss)
@@ -95,4 +117,7 @@ if __name__ == '__main__':
     # testing
     test_acc, test_loss = test_inference(args, global_model, test_dataset)
     print('Test on', len(test_dataset), 'samples')
-    print("Test Accuracy: {:.2f}%".format(100*test_acc))
+    if args.dataset == "carvana_image":
+        print("Test meanIOU: {:.2f}%".format(100*test_acc))
+    else:
+        print("Test Accuracy: {:.2f}%".format(100*test_acc))
