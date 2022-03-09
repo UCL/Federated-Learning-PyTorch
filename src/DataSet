@@ -1,0 +1,82 @@
+import cv2
+import numpy as np
+from PIL import Image
+from torch.utils.data import Dataset
+import sys
+import os
+import glob
+from torchvision import datasets, transforms
+import albumentations as A  # 数据增广
+
+
+
+
+class carvana_image_DataSet(Dataset):
+
+    def __init__(self, data_dir: str, train: bool, transform, imgSize, debug):
+        """
+        data_drir = '../data/carvana_image/train'
+        """
+        self.train = train
+        self.transform = transform
+        self.paths = self.GetPaths(data_dir)
+        if debug:
+            self.paths = self.paths[:300]
+        self.len = len(self.paths)
+        self.imgSize = imgSize
+
+    def __getitem__(self, index):
+        path = self.paths[index]
+        img = np.array(Image.open(path))  # 读取3通道jpg影像
+        img_shape = img.shape  # 高 宽 通道
+        mask = np.array(Image.open(self.GetMaskPath(path)))
+
+        sample = A.Resize(self.imgSize, self.imgSize)(
+            image=img, mask=mask)
+
+        img = sample['image']
+        mask = sample['mask'].astype(np.int64)  # 转换数据类型
+
+        # mask = mask[np.newaxis, :, :]  # Mask虽然只有一个波段，但是也要增加一个维度变成3维的
+        img = self.transform(img)
+
+        if self.train:
+            return img, mask  # 返回原始的数据和对应的标注
+        else:
+            # img_shape = img.shape  # 高 宽 通道
+            # img = self.transform_test(image=img)['image']  # 数据增广
+            # img = get_preprocess_3band()(image=img)['image']  # 对影像做归一化处理
+            # img_path = self.paths[index]
+            return img
+
+    def __len__(self):
+        return self.len
+
+    def GetPaths(self, folder):
+        paths = glob.glob(os.path.join(folder, "*.jpg"))
+        return paths
+
+    def GetMaskPath(self, imgPath):
+        """
+        0cdf5b5d0ce1_01.jpg
+        0cdf5b5d0ce1_01_mask.gif
+        """
+        MaskPath = imgPath.replace('train', 'train_masks')
+        MaskPath = MaskPath.replace('.jpg', '_mask.gif')
+        return MaskPath
+
+if __name__ == '__main__':
+    root = '../data/carvana_image/train'
+    path = '../data/carvana_image/train_masks/0cdf5b5d0ce1_01_mask.gif'
+    mask = np.array(Image.open(path))
+    print(mask.shape)
+    print(mask[640][1000])
+
+    apply_transform = transforms.Compose(
+        [transforms.ToTensor(),
+         transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
+    d = carvana_image_DataSet(root, True, apply_transform, 512)
+    a = d[0]
+    print(len(a))
+    print(a[0].shape)
+    print(a[1].shape)
