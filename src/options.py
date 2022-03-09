@@ -25,13 +25,13 @@ def args_parser():
                         help='SGD momentum (default: 0.5)')
 
     # model arguments
-    parser.add_argument('--model', type=str, default='mlp', help='model name')
+    parser.add_argument('--model', type=str, default='unet', help='model name : mlp, unet')
     parser.add_argument('--kernel_num', type=int, default=9,
                         help='number of each kind of kernel')
     parser.add_argument('--kernel_sizes', type=str, default='3,4,5',
                         help='comma-separated kernel size to \
                         use for convolution')
-    parser.add_argument('--num_channels', type=int, default=1, help="number \
+    parser.add_argument('--num_channels', type=int, default=3, help="number \
                         of channels of imgs")
     parser.add_argument('--norm', type=str, default='batch_norm',
                         help="batch_norm, layer_norm, or None")
@@ -41,14 +41,22 @@ def args_parser():
     parser.add_argument('--max_pool', type=str, default='True',
                         help="Whether use max pooling rather than \
                         strided convolutions")
+    # unet arguments
+    parser.add_argument('--unet_use_bilinear', action='store_true', default=True)
+    parser.add_argument('--debug', action='store_true', default=False)  # False True
+    parser.add_argument('--resize', type=int, default=512)
+    parser.add_argument('--criterion', type=str, default='CE',
+                        help="CE, NLLLoss")
+    parser.add_argument('--trainloder_BatchSize', type=int, default=2)
+    parser.add_argument('--testloder_BatchSize', type=int, default=2)
 
     # other arguments
-    parser.add_argument('--dataset', type=str, default='mnist', help="name \
-                        of dataset")
-    parser.add_argument('--num_classes', type=int, default=10, help="number \
-                        of classes")
-    parser.add_argument('--gpu', default=None, help="To use cuda, set \
-                        to a specific GPU ID. Default set to use CPU.")
+    parser.add_argument('--dataset', type=str, default='carvana_image', help="name \
+                        of dataset : mnist, carvana_image")
+    parser.add_argument('--num_classes', type=int, default=2, help="number \
+                        of classes : 10, 1")
+    parser.add_argument('--gpu', type=int,  default=None, help="To use cuda, set \
+                        to a specific GPU ID. Default set to use CPU.")  # None
     parser.add_argument('--optimizer', type=str, default='sgd', help="type \
                         of optimizer")
     parser.add_argument('--iid', type=int, default=1,
