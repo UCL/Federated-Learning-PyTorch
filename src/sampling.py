@@ -165,17 +165,18 @@ def carvana_image_noniid(dataset, num_users):
     :return:
     """
     # 5,088 training imgs -->  53 imgs/shard X 96 shards
-    num_shards, num_imgs = 53, 96
-    idx_shard = [i for i in range(num_shards)]
-    dict_users = {i: np.array([]) for i in range(num_users)}
-    idxs = np.arange(num_shards*num_imgs)
+    # num_shards, num_imgs = 53, 96
+    num_shards, num_imgs = 5, 100
+    idx_shard = [i for i in range(num_shards)]  # [0, 1, 2, 3, 4]
+    dict_users = {i: np.array([]) for i in range(num_users)}  # {0 : [], 1 : [], ... ...}
+    idxs = np.arange(num_shards*num_imgs)  # all indexs [0, 1, 2, ... ..., 499]
     # labels = dataset.train_labels.numpy()
     labels = np.array(dataset.train_labels)
 
-    # sort labels
-    idxs_labels = np.vstack((idxs, labels))
-    idxs_labels = idxs_labels[:, idxs_labels[1, :].argsort()]
-    idxs = idxs_labels[0, :]
+    # # sort labels
+    # idxs_labels = np.vstack((idxs, labels))
+    # idxs_labels = idxs_labels[:, idxs_labels[1, :].argsort()]
+    # idxs = idxs_labels[0, :]
 
     # divide and assign
     for i in range(num_users):
@@ -184,7 +185,6 @@ def carvana_image_noniid(dataset, num_users):
         for rand in rand_set:
             dict_users[i] = np.concatenate(
                 (dict_users[i], idxs[rand*num_imgs:(rand+1)*num_imgs]), axis=0)
-
     return dict_users
 
 
@@ -234,11 +234,22 @@ def cifar_noniid(dataset, num_users):
 
 
 if __name__ == '__main__':
-    dataset_train = datasets.MNIST('./data/mnist/', train=True, download=True,
-                                   transform=transforms.Compose([
-                                       transforms.ToTensor(),
-                                       transforms.Normalize((0.1307,),
-                                                            (0.3081,))
-                                   ]))
-    num = 100
-    d = mnist_noniid(dataset_train, num)
+    # dataset_train = datasets.MNIST('./data/mnist/', train=True, download=True,
+    #                                transform=transforms.Compose([
+    #                                    transforms.ToTensor(),
+    #                                    transforms.Normalize((0.1307,),
+    #                                                         (0.3081,))
+    #                                ]))
+    # num = 100
+    # d = mnist_noniid(dataset_train, num)
+    # dict_users = {i: np.array([]) for i in range(5)}
+    # print(
+    #     dict_users
+    # )
+    # a = np.random.choice([1,2,3,4,5], size=2, replace=True, p=None)
+    # print(a)
+    a = np.arange(3)
+    b = np.arange(3)
+    # print(type(a))
+    # b = [4, 5, 6]
+    print(np.vstack(a, b))
