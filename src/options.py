@@ -9,12 +9,12 @@ def args_parser():
     parser = argparse.ArgumentParser()
 
     # federated arguments (Notation for the arguments followed from paper)
-    parser.add_argument('--epochs', type=int, default=10,
+    parser.add_argument('--epochs', type=int, default=100,
                         help="number of rounds of training")
-    parser.add_argument('--num_users', type=int, default=100,
-                        help="number of users: K")
-    parser.add_argument('--frac', type=float, default=0.1,
-                        help='the fraction of clients: C')
+    parser.add_argument('--num_users', type=int, default=5,
+                        help="number of users: K, such as 100")
+    parser.add_argument('--frac', type=float, default=0.5,
+                        help='the fraction of clients: C, such as 0.1')
     parser.add_argument('--local_ep', type=int, default=10,
                         help="the number of local epochs: E")
     parser.add_argument('--local_bs', type=int, default=10,
@@ -43,20 +43,29 @@ def args_parser():
                         strided convolutions")
     # unet arguments
     parser.add_argument('--unet_use_bilinear', action='store_true', default=True)
-    parser.add_argument('--debug', action='store_true', default=False)  # False True
     parser.add_argument('--resize', type=int, default=512)
-    parser.add_argument('--criterion', type=str, default='CE',
-                        help="CE, NLLLoss")
-    parser.add_argument('--trainloder_BatchSize', type=int, default=2)
-    parser.add_argument('--testloder_BatchSize', type=int, default=2)
+    parser.add_argument('--criterion', type=str, default='DiceLoss',
+                        help="BCE, NLLLoss, DiceLoss")
+    parser.add_argument('--trainloder_BatchSize', type=int, default=10)
+    parser.add_argument('--testloder_BatchSize', type=int, default=1)
+    parser.add_argument('--Metric_num_classes', type=int, default=2)
+
+
+    # diceloss arguments
+    parser.add_argument('--ignore_index', type=int, default=0)
+    parser.add_argument('--diceloss_mode', type=str, default='binary',
+                        help="binary, multiclass")
+
+    # tqdm arguments
+    parser.add_argument('--ncols', type=int, default=200)
 
     # other arguments
     parser.add_argument('--dataset', type=str, default='carvana_image', help="name \
                         of dataset : mnist, carvana_image")
-    parser.add_argument('--num_classes', type=int, default=2, help="number \
+    parser.add_argument('--num_classes', type=int, default=1, help="number \
                         of classes : 10, 1")
-    parser.add_argument('--gpu', type=int,  default=None, help="To use cuda, set \
-                        to a specific GPU ID. Default set to use CPU.")  # None
+    parser.add_argument('--gpu', default='cpu', help="To use cuda, set \
+                        to a specific GPU ID. Default set to use CPU. cpu. cuda:0")
     parser.add_argument('--optimizer', type=str, default='sgd', help="type \
                         of optimizer")
     parser.add_argument('--iid', type=int, default=1,
@@ -67,6 +76,6 @@ def args_parser():
     parser.add_argument('--stopping_rounds', type=int, default=10,
                         help='rounds of early stopping')
     parser.add_argument('--verbose', type=int, default=1, help='verbose')
-    parser.add_argument('--seed', type=int, default=1, help='random seed')
+    parser.add_argument('--seed', type=int, default=2, help='random seed')
     args = parser.parse_args()
     return args
