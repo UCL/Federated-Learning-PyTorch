@@ -1,0 +1,98 @@
+'''
+Date: 2022-07-15 20:23:22
+LastEditors: Lzr
+LastEditTime: 2022-07-17 12:28:27
+FilePath: \federate\src\predict.py
+'''
+import os
+
+from matplotlib import pyplot as plt
+from PIL import Image
+import glob
+
+import numpy as np
+
+
+def show_result(index, path_list,root):
+    # ../data/carvana_image/test/04bd942b463b_08.jpg
+    image_path = path_list[index]
+    mask_path = image_path.replace(
+        'test', 'test_masks').replace('.png', '_mask.png')
+    # print(mask_path)
+    name = os.path.split(image_path)[1]
+    baseline_predict_path = root + '/save/predictions/baseline/' + \
+        name.replace('.png', '_prediction.png')
+    federated_predict_path = root + '/save/predictions/federated/' + \
+        name.replace('.png', '_prediction.png')
+    # print(federated_predict_path)
+    image = Image.open(image_path)
+    mask = Image.open(mask_path)
+    baseline_predict = Image.open(baseline_predict_path)
+    federate_predict = Image.open(federated_predict_path)
+
+    plt.figure(figsize=(32, 16), dpi=150)
+    fs = 15
+
+    plt.subplot(221)
+    plt.imshow(image)
+    plt.title('image', fontsize=fs)
+
+    plt.subplot(222)
+    plt.imshow(mask)
+    plt.title('mask', fontsize=fs)
+
+    plt.subplot(223)
+    plt.imshow(baseline_predict)
+    plt.title('baseline_predict', fontsize=fs)
+
+    plt.subplot(224)
+    plt.imshow(federate_predict)
+    plt.title('federate_predict', fontsize=fs)
+
+    plt.tight_layout()
+    plt.show()
+
+
+def MyPlot(savePath, inputFile,  ylabel, xlabel='epochs'):
+    data_list = []
+    with open(inputFile, 'r') as f:
+        # 读取文件中的所有行，并消除回车
+        for line in f.readlines():
+            line = line.strip('\n')
+            data_list.append(np.float64(line))
+    plt.figure()
+    plt.plot(range(len(data_list)), data_list)
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.savefig(savePath)
+    return data_list
+
+root = r'D:\研究生\Module\COMP0035\Federated-Learning_Project'
+folder = os.path.join(root, 'data/cleaned_dataset/test')
+paths = glob.glob(os.path.join(folder, "*.png"))
+show_result(5, paths, root)
+
+# # baseline
+# MyPlot(savePath=r'../save/baseline/nn_liver_unet_100_loss.png',
+#        inputFile=r'../save/baseline/nn_liver_unet_100_loss.txt',
+#        ylabel='Train loss')
+# MyPlot(savePath=r'../save/baseline/nn_liver_unet_100_mIOU.png',
+#        inputFile=r'../save/baseline/nn_liver_unet_100_mIOU.txt',
+#        ylabel='Train mIOU')
+# #  fe
+# MyPlot(savePath=r'../save/federated/nn_liver_unet_100_loss.png',
+#        inputFile=r'../save/federated/nn_liver_unet_100_loss.txt',
+#        ylabel='Train loss')
+# MyPlot(savePath=r'../save/federated/nn_liver_unet_100_mIOU.png',
+#        inputFile=r'../save/federated/nn_liver_unet_100_mIOU.txt',
+#        ylabel='Train mIOU')
+
+
+# print(paths[0])
+# p = "../data/carvana_image/test/04bd942b463b_08.jpg"
+# "../data/carvana_image/test_masks/04bd942b463b_08_mask.gif"
+# pp = p.replace('test', 'test_masks').replace('.jpg', '_mask.gif')
+# print(pp)
+
+# ../save/predictions/federated/04bd942b463b_03_prediction.png
+# ../save/predictions/federated/04bd942b463b_08_prediction.png
